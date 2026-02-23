@@ -53,7 +53,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 4. Open docs:
 
-- Swagger UI: `http://localhost:8000/docs`
+- Swagger UI: `http://localhost:8000/`
 - Health: `http://localhost:8000/health`
 
 ## Docker Run

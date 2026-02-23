@@ -11,7 +11,22 @@ app = FastAPI(
     title="RAG-Powered Financial Document Analyzer API",
     version="1.0.0",
     description="Upload financial reports, index them into Chroma, then query with a Gemini-backed RAG pipeline.",
+    docs_url="/",
+    redoc_url=None,
 )
+
+
+def _raise_if_rate_limited(exc: Exception) -> None:
+    message = str(exc)
+    if "RESOURCE_EXHAUSTED" in message or "quota" in message.lower():
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "rate_limited",
+                # added msg for gemini quota/rate limit
+                "message": "Gemini quota/rate limit reached. Please retry after 60 seconds.",
+            },
+        ) from exc
 
 
 @app.get("/health")
@@ -32,11 +47,19 @@ async def ingest(file: UploadFile = File(...)) -> IngestResponse:
     if not file_bytes:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
-    result = rag_service.ingest_document(filename=file.filename, file_bytes=file_bytes)
+    try:
+        result = rag_service.ingest_document(filename=file.filename, file_bytes=file_bytes)
+    except Exception as exc:
+        _raise_if_rate_limited(exc)
+        raise
     return IngestResponse(**result)
 
 
 @app.post("/query", response_model=QueryResponse)
 def query(payload: QueryRequest) -> QueryResponse:
-    result = rag_service.query(question=payload.question, k=payload.k)
+    try:
+        result = rag_service.query(question=payload.question, k=payload.k)
+    except Exception as exc:
+        _raise_if_rate_limited(exc)
+        raise
     return QueryResponse(**result)

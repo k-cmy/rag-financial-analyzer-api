@@ -26,7 +26,7 @@ def get_settings() -> Settings:
     return Settings(
         gemini_api_key=api_key,
         gemini_model=os.getenv("GEMINI_MODEL", "gemini-3-flash-preview"),
-        gemini_embedding_model=os.getenv("GEMINI_EMBEDDING_MODEL", "models/text-embedding-004"),
+        gemini_embedding_model=os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001"),
         chroma_persist_dir=os.getenv("CHROMA_PERSIST_DIR", "./chroma_db"),
         chroma_collection_name=os.getenv("CHROMA_COLLECTION_NAME", "financial_docs"),
         chunk_size=int(os.getenv("CHUNK_SIZE", "1200")),

@@ -34,6 +34,31 @@ class RAGService:
             embedding_function=self.embeddings,
         )
 
+    def _extract_answer_text(self, model_response: Any) -> str:
+        content = getattr(model_response, "content", model_response)
+
+        if isinstance(content, str):
+            return content
+
+        if isinstance(content, list):
+            text_parts: list[str] = []
+            for item in content:
+                if isinstance(item, str):
+                    text_parts.append(item)
+                    continue
+                if isinstance(item, dict):
+                    text = item.get("text")
+                    if isinstance(text, str):
+                        text_parts.append(text)
+                        continue
+                text = getattr(item, "text", None)
+                if isinstance(text, str):
+                    text_parts.append(text)
+            if text_parts:
+                return "\n".join(text_parts).strip()
+
+        return str(content)
+
     def _load_documents(self, filename: str, file_bytes: bytes) -> list[Document]:
         suffix = Path(filename).suffix.lower()
         source_name = Path(filename).name
@@ -111,6 +136,6 @@ class RAGService:
             f"Context:\n{context}"
         )
         model_response = self.llm.invoke(prompt)
-        answer = model_response.content if hasattr(model_response, "content") else str(model_response)
+        answer = self._extract_answer_text(model_response)
 
         return {"answer": answer, "sources": sources}
